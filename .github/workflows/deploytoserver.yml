@@ -3,44 +3,27 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '16'
+      - name: SSH into EC2 instance
+        uses: appleboy/ssh-action@master
+        with:
+          host: "13.234.106.125"
+          username: "ubuntu"
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: 22
 
-    - name: Install Dependencies
-      run: |
-        yarn install
-
-    - name: Build React App
-      run: |
-        yarn run build
-
-    - name: Copy Build to EC2
-      uses: appleboy/scp-action@v1
-      with:
-        host: 13.234.106.125
-        username: ubuntu
-        key: |
-          ${{ secrets.DEPLOY_KEY }}
-        source: 'build/'
-        target: '/home/ubuntu/tileclipperfrontend/geoai-janakpur/dist/'
-
-    - name: Restart Nginx on EC2
-      uses: appleboy/ssh-action@v1
-      with:
-        host: 13.234.106.125
-        username: ubuntu
-        key: |
-          ${{ secrets.DEPLOY_KEY }}
-        script: 'sudo systemctl restart nginx'
+          # Execute commands on the EC2 instance
+          script: |
+            cd /home/ubuntu/tileclipperfrontend/geoai-janakpur/
+            git pull origin main
+            yarn run build
+            sudo systemctl restart nginx
