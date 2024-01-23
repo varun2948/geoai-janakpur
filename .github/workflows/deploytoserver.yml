@@ -16,7 +16,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '21'  # Change this to the Node.js version you need
+        node-version: '16'
 
     - name: Install Dependencies
       run: |
@@ -27,7 +27,7 @@ jobs:
         yarn run build
 
     - name: Copy Build to EC2
-      uses: appleboy/scp-action@v2
+      uses: appleboy/scp-action@v1
       with:
         host: 13.234.106.125
         username: ubuntu
@@ -37,7 +37,7 @@ jobs:
         target: '/home/ubuntu/tileclipperfrontend/geoai-janakpur/dist/'
 
     - name: Restart Nginx on EC2
-      uses: appleboy/ssh-action@v2
+      uses: appleboy/ssh-action@v1
       with:
         host: 13.234.106.125
         username: ubuntu
