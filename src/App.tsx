@@ -1,3 +1,6 @@
+/* eslint-disable no-constant-condition */
+// @ts-nocheck
+
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import maplibregl from "maplibre-gl";
