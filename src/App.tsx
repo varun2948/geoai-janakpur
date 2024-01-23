@@ -20,6 +20,9 @@ function App() {
   const [bbox, setBbox] = useState(null);
   const [currentState, setCurrentState] = useState();
   const [value, setValue] = useState<number[]>([18, 20]);
+  const [tileUrl, setTileUrl] = useState<string>(
+    "https://janakpur.dmaps.org/api/v1/raster-tiles/{z}/{x}/{y}.png?raster_id=1"
+  );
 
   const handleChange = (event: Event, newValue: number | number[]) => {
     setValue(newValue as number[]);
@@ -67,7 +70,28 @@ function App() {
       setActiveLayer((prevStrings) => [...prevStrings, layerName]);
     }
   };
-  function addRasterLayer(map, sourceName, tileUrl, layerId) {
+
+  function removeRasterLayer(map, sourceName, layerId) {
+    if (map.current.getSource(sourceName)) {
+      map.current.removeSource(sourceName);
+    }
+    if (map.current.getLayer(layerId)) {
+      map.current.removeLayer(layerId);
+    }
+  }
+  function addRasterLayer(
+    map,
+    sourceName,
+    tileUrl,
+    layerId,
+    boundingbox = [-180, -85.051129, 180, 85.051129]
+  ) {
+    if (map.current.getSource(sourceName)) {
+      map.current.removeSource(sourceName);
+    }
+    if (map.current.getLayer(layerId)) {
+      map.current.removeLayer(layerId);
+    }
     map.current.addSource(sourceName, {
       type: "raster",
       tiles: [tileUrl],
@@ -75,6 +99,7 @@ function App() {
       scheme: "xyz",
       minzoom: 10,
       maxzoom: 20,
+      bounds: boundingbox,
       attribution:
         'Map tiles by <a target="_blank" href="http://naxa.com.np">Naxa</a>; Hosting by <a href="https://naxa.com.np/" target="_blank">Naxa</a>. Data &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a> contributors',
     });
@@ -104,7 +129,7 @@ function App() {
         addRasterLayer(
           map,
           "satelliteLayer_data",
-          "https://janakpur.dmaps.org/api/v1/raster-tiles/{z}/{x}/{y}.png?raster_id=1",
+          tileUrl,
           // "https://naxa.com.np/geoai/wastecoverageai/rastertile/{z}/{x}/{y}.png",
           "satelliteLayer_data"
         );
@@ -130,7 +155,7 @@ function App() {
       },
     });
     setDrawState(Draw);
-    map?.current?.addControl(Draw, "bottom-right");
+    map?.current?.addControl(Draw, "top-left");
 
     map?.current?.on("draw.create", function (e) {
       console.log(e.features);
@@ -139,17 +164,17 @@ function App() {
       console.log(bbox, "bbox");
       setBbox(bbox);
     });
-    map?.current?.on("style.load", () => {
-      const mapOverLayer = {
-        satelliteLayer_data: "satelliteLayer_data",
-      };
-      // OpacityControl
-      const Opacity = new OpacityControl({
-        overLayers: mapOverLayer,
-        opacityControl: true,
-      });
-      map?.current?.addControl(Opacity, "top-right");
-    });
+    // map?.current?.on("style.load", () => {
+    //   const mapOverLayer = {
+    //     satelliteLayer_data: "satelliteLayer_data",
+    //   };
+    //   // OpacityControl
+    //   const Opacity = new OpacityControl({
+    //     overLayers: mapOverLayer,
+    //     opacityControl: true,
+    //   });
+    //   map?.current?.addControl(Opacity, "top-right");
+    // });
     return () => {
       // map?.current?.removeControl(draw);
       // if (map.current.getLayer("contours-data")) {
@@ -174,8 +199,7 @@ function App() {
     }${dateFormattedForOutput.getFullYear()}${dateFormattedForOutput.getHours()}${dateFormattedForOutput.getMinutes()}${dateFormattedForOutput.getSeconds()}`;
     splitPolygon(drawState);
     const payload = {
-      baseUrl:
-        "https://janakpur.dmaps.org/api/v1/raster-tiles/{z}/{x}/{y}.png?raster_id=1",
+      baseUrl: tileUrl,
       bbox: bbox,
       input_folder: "tiles",
       output_folder: dtText,
@@ -209,12 +233,24 @@ function App() {
           setCurrentState(
             `Tiles are ready for download ${checkTileJson[0]["url"]}`
           );
+
           addRasterLayer(
             map,
-            "predicted-rasterlayer",
+            "predicted_rasterlayer",
             checkTileJson[0]["url"],
-            "predicted-rasterlayer-data"
+            "predicted_rasterlayer_data",
+            bbox
           );
+          const mapOverLayer = {
+            satelliteLayer_data: "satelliteLayer_data",
+            predicted_rasterlayer_data: "predicted_rasterlayer_data",
+          };
+          // OpacityControl
+          const Opacity = new OpacityControl({
+            overLayers: mapOverLayer,
+            opacityControl: true,
+          });
+          map?.current?.addControl(Opacity, "top-right");
           break;
         } else {
           setCurrentState(`Error: Unexpected status ${status}`);
@@ -230,9 +266,30 @@ function App() {
     //     st.sidebar.error(`Error: ${error}`);
     // }
   };
+  useEffect(() => {
+    if (!map?.current) return null;
+    if (tileUrl === "") return null;
+    const source = map?.current?.getSource("satelliteLayer_data");
+    console.log(source, "source");
+    if (source) {
+      source?.setTiles([tileUrl]);
+    }
+  }, [tileUrl]);
+
   return (
     <div className="flex">
       <div className="sidebar w-80 h-auto p-4">
+        <div className="p-2 ">
+          <p>Tile Url:</p>
+          <input
+            className="p-2 border-2 border-gray-600 rounded"
+            type="text"
+            onChange={(e) => {
+              setTileUrl(e.target.value);
+            }}
+            value={tileUrl}
+          />
+        </div>
         <div className="p-2 mt-10 ">
           <p>Zoom Level Range to Predict</p>
           <Slider
@@ -262,7 +319,7 @@ function App() {
         <h2>Status: {currentState}</h2>
       </div>
       <div ref={mapContainerRef} id="map" />
-      <div className="absolute flex flex-col top-0 right-0 p-4 w-auto h-auto ">
+      {/* <div className="absolute flex flex-col top-0 right-0 p-4 w-auto h-auto ">
         <div>
           <div
             className={`heading flex items-center cursor-pointer w-full ${
@@ -305,7 +362,7 @@ function App() {
             <h5 className="ml-1 font-bold text-sm">Waste Layer</h5>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
