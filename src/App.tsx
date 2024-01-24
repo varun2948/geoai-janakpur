@@ -11,8 +11,12 @@ import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import * as turf from "@turf/turf";
 import Slider from "@mui/material/Slider";
 import OpacityControl from "maplibre-gl-opacity";
+import NaxaLogo from "./assets/Naxa_logo.png";
+import GeovationLogo from "./assets/Geovation.png";
+import AsiaFoundationGroupLogo from "./assets/grouplogo.png";
 
 function App() {
+  const dateFormattedForOutput = new Date();
   const mapContainerRef = useRef(null);
   const map = useRef<Map>(new Map());
   const [activeLayer, setActiveLayer] = useState([]);
@@ -22,6 +26,11 @@ function App() {
   const [value, setValue] = useState<number[]>([18, 20]);
   const [tileUrl, setTileUrl] = useState<string>(
     "https://janakpur.dmaps.org/api/v1/raster-tiles/{z}/{x}/{y}.png?raster_id=1"
+  );
+  const [outputFolder, setOutputFolder] = useState<string>(
+    `${dateFormattedForOutput.getDate()}${
+      dateFormattedForOutput.getMonth() + 1
+    }${dateFormattedForOutput.getFullYear()}${dateFormattedForOutput.getHours()}${dateFormattedForOutput.getMinutes()}${dateFormattedForOutput.getSeconds()}`
   );
 
   const handleChange = (event: Event, newValue: number | number[]) => {
@@ -193,16 +202,12 @@ function App() {
   }, [map]);
   const zoomLevel = [18, 20];
   const predictWithBbox = () => {
-    const dateFormattedForOutput = new Date();
-    const dtText = `${dateFormattedForOutput.getDate()}${
-      dateFormattedForOutput.getMonth() + 1
-    }${dateFormattedForOutput.getFullYear()}${dateFormattedForOutput.getHours()}${dateFormattedForOutput.getMinutes()}${dateFormattedForOutput.getSeconds()}`;
     splitPolygon(drawState);
     const payload = {
       baseUrl: tileUrl,
       bbox: bbox,
       input_folder: "tiles",
-      output_folder: dtText,
+      output_folder: outputFolder,
       max_workers: 10,
       zoom_level: [zoomLevel[0], zoomLevel[1]],
     };
@@ -214,7 +219,7 @@ function App() {
       },
       body: JSON.stringify(payload),
     });
-    fetchPredictedTiles(dtText);
+    fetchPredictedTiles(outputFolder);
   };
   const fetchPredictedTiles = async (outputFolder) => {
     if (outputFolder) {
@@ -278,45 +283,80 @@ function App() {
 
   return (
     <div className="flex">
-      <div className="sidebar w-80 h-auto p-4">
-        <div className="p-2 ">
-          <p>Tile Url:</p>
-          <input
-            className="p-2 border-2 border-gray-600 rounded"
-            type="text"
-            onChange={(e) => {
-              setTileUrl(e.target.value);
-            }}
-            value={tileUrl}
-          />
+      <div className="sidebar w-80 h-auto p-4 flex flex-col justify-between">
+        <div>
+          <div className="p-2 ">
+            <p>Output Folder :</p>
+            <input
+              className="p-2 border-2 border-gray-600 rounded"
+              type="text"
+              onChange={(e) => {
+                setOutputFolder(e.target.value);
+              }}
+              value={outputFolder}
+            />
+          </div>
+          <div className="p-2 ">
+            <p>Tile Url:</p>
+            <input
+              className="p-2 border-2 border-gray-600 rounded"
+              type="text"
+              onChange={(e) => {
+                setTileUrl(e.target.value);
+              }}
+              value={tileUrl}
+            />
+          </div>
+          <div className="p-2 mt-10 ">
+            <p>Zoom Level Range to Predict</p>
+            <Slider
+              getAriaLabel={() => "Temperature range"}
+              value={value}
+              onChange={handleChange}
+              valueLabelDisplay="auto"
+              max={25}
+              min={1}
+              // getAriaValueText={valuetext}
+            />
+          </div>
+          <p>
+            Zoom Level:{" "}
+            <span>
+              {value[0]} - {value[1]}
+            </span>
+          </p>
+          <div className="flex justify-center">
+            <button
+              className="p-2 my-4 bg-red-600 text-white hover:bg-red-800 rounded"
+              onClick={predictWithBbox}
+            >
+              Predict
+            </button>
+          </div>
+          <h2>Status: {currentState}</h2>
         </div>
-        <div className="p-2 mt-10 ">
-          <p>Zoom Level Range to Predict</p>
-          <Slider
-            getAriaLabel={() => "Temperature range"}
-            value={value}
-            onChange={handleChange}
-            valueLabelDisplay="auto"
-            max={25}
-            min={1}
-            // getAriaValueText={valuetext}
-          />
+        <div className="p-2">
+          <div className="flex justify-center items-center gap-3 mb-3">
+            <div className="flex flex-col gap-4 w-full">
+              <div className="flex justify-between">
+                <img width={135} src={NaxaLogo} alt="Naxa Logo" />
+                <img
+                  src={GeovationLogo}
+                  className="max-h-12"
+                  alt="Geovation Logo"
+                />
+              </div>
+            </div>
+          </div>
+          <p className="flex text-gray-700 text-xs text-justify ">
+            The Solid Waste Detection Project, developed by Naxa Pvt Ltd. with
+            support from The Asia Foundation is a sole property of Janakpurdham
+            Sub-metropolitan City, Government of Nepal. Any unauthorized use of
+            the data, models, and components presented in this application will
+            be punishable under appropriate laws. Special thanks to Geovation
+            Nepal Pvt. Ltd. for drone survey and othrophoto development.
+          </p>
         </div>
-        <p>
-          Zoom Level:{" "}
-          <span>
-            {value[0]} - {value[1]}
-          </span>
-        </p>
-        <div className="flex justify-center">
-          <button
-            className="p-2 my-4 bg-red-600 text-white hover:bg-red-800 rounded"
-            onClick={predictWithBbox}
-          >
-            Predict
-          </button>
-        </div>
-        <h2>Status: {currentState}</h2>
       </div>
       <div ref={mapContainerRef} id="map" />
       {/* <div className="absolute flex flex-col top-0 right-0 p-4 w-auto h-auto ">
