@@ -1,0 +1,29 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: SSH into EC2 instance
+        uses: appleboy/ssh-action@master
+        with:
+          host: "13.234.106.125"
+          username: "ubuntu"
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: 22
+
+          # Execute commands on the EC2 instance
+          script: |
+            cd /home/ubuntu/tileclipperfrontend/geoai-janakpur/
+            git pull origin main
+            yarn run build
+            sudo systemctl restart nginx
