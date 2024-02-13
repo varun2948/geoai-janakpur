@@ -349,12 +349,7 @@ function App() {
             </div>
           </div>
           <p className="flex text-gray-700 text-xs text-justify ">
-            The Solid Waste Detection Project, developed by Naxa Pvt Ltd. with
-            support from The Asia Foundation is a sole property of Janakpurdham
-            Sub-metropolitan City, Government of Nepal. Any unauthorized use of
-            the data, models, and components presented in this application will
-            be punishable under appropriate laws. Special thanks to Geovation
-            Nepal Pvt. Ltd. for drone survey and othrophoto development.
+            The Solid Waste Detection Project, developed by Naxa Pvt Ltd. This is a sole property of Naxa Pvt. Ltd. Any unauthorized use of the data, models, and components presented in this application will be punishable under appropriate laws. Special thanks to Geovation Nepal Pvt. Ltd. for drone survey and orthophoto development.
           </p>
         </div>
       </div>
